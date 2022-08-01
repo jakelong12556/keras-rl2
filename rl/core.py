@@ -184,9 +184,11 @@ class Agent:
                     new_action = available_actions.pop()
                     env_test = deepcopy(env)
                     _, _, fail, _ = env_test.step(new_action)
+                    callbacks.on_custom_call({'old action': action, 'new action': new_action, 'action_list': available_actions})
+
 
                     if(fail == False):
-                      callbacks.on_custom_call({'old action': action, 'new action': new_action, 'action_list': available_actions})
+                      callbacks.on_custom_call({'escaped': 'escaped', 'new action': new_action, 'action_list': available_actions})
                       action = new_action
                       break
 
