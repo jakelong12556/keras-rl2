@@ -172,25 +172,28 @@ class Agent:
                 ##
                 ##
 
-                env_test = deepcopy(env)
-                _, _, done_test, _ = env_test.step(action)
-
-                if(done_test):
-                  available_actions = range(env.action_space)
-                  available_actions.remove(action)
-
-                  while available_actions.len != 0:
-
-                    new_action = available_actions.pop()
-                    env_test = deepcopy(env)
-                    _, _, fail, _ = env_test.step(new_action)
-                    callbacks.on_custom_call({'old action': action, 'new action': new_action, 'action_list': available_actions})
+                callbacks.on_custom_call({'old action': action})
 
 
-                    if(fail == False):
-                      callbacks.on_custom_call({'escaped': 'escaped', 'new action': new_action, 'action_list': available_actions})
-                      action = new_action
-                      break
+                # env_test = deepcopy(env)
+                # _, _, done_test, _ = env_test.step(action)
+
+                # if(done_test):
+                #   available_actions = range(env.action_space)
+                #   available_actions.remove(action)
+
+                #   while available_actions.len != 0:
+
+                #     new_action = available_actions.pop()
+                #     env_test = deepcopy(env)
+                #     _, _, fail, _ = env_test.step(new_action)
+                #     callbacks.on_custom_call({'old action': action, 'new action': new_action, 'action_list': available_actions})
+
+
+                #     if(fail == False):
+                #       callbacks.on_custom_call({'escaped': 'escaped', 'new action': new_action, 'action_list': available_actions})
+                #       action = new_action
+                #       break
 
                 if self.processor is not None:
                     action = self.processor.process_action(action)
