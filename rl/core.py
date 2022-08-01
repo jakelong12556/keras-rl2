@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-
+import random
 import numpy as np
 from tensorflow.keras.callbacks import History
 
@@ -166,6 +166,31 @@ class Agent:
                 # This is were all of the work happens. We first perceive and compute the action
                 # (forward step) and then use the reward to improve (backward step).
                 action = self.forward(observation)
+
+                ##
+                ##
+                ##
+                ##
+
+                env_test = copy.deepcopy(env)
+                _, _, done_test, _ = env_test.step(action)
+                callbacks.on_custom_call({'old action': action, 'new action': new_action, 'action_list': available_actions})
+
+                if(done_test):
+                  available_actions = range(env.action_space)
+                  available_actions.remove(action)
+
+                  while available_actions.len != 0:
+
+                    new_action = available_actions.pop()
+                    env_test = copy.deepcopy(env)
+                    _, _, fail, _ = env_test.step(new_action)
+
+                    if(fail == False):
+                      callbacks.on_custom_call({'old action': action, 'new action': new_action, 'action_list': available_actions})
+                      action = new_action
+                      break
+
                 if self.processor is not None:
                     action = self.processor.process_action(action)
                 reward = np.float32(0)

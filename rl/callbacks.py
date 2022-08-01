@@ -9,6 +9,7 @@ from tensorflow.keras import __version__ as KERAS_VERSION
 from tensorflow.python.keras.callbacks import Callback as KerasCallback, CallbackList as KerasCallbackList
 from tensorflow.python.keras.utils.generic_utils import Progbar
 
+
 class Callback(KerasCallback):
     def _set_env(self, env):
         self.env = env
@@ -35,6 +36,9 @@ class Callback(KerasCallback):
 
     def on_action_end(self, action, logs={}):
         """Called at end of each action"""
+        pass
+    
+    def on_custom_call(self, logs={}):
         pass
 
 
@@ -96,6 +100,12 @@ class CallbackList(KerasCallbackList):
         for callback in self.callbacks:
             if callable(getattr(callback, 'on_action_end', None)):
                 callback.on_action_end(action, logs=logs)
+
+    def on_custom_call(self, logs={}):
+        """ Called at will for each callback in callbackList"""
+        for callback in self.callbacks:
+            if callable(getattr(callback, 'on_custom_call', None)):
+                callback.on_custom_call(logs=logs)
 
 
 class TestLogger(Callback):
@@ -170,7 +180,7 @@ class TrainEpisodeLogger(Callback):
         metrics_text = metrics_template.format(*metrics_variables)
 
         nb_step_digits = str(int(np.ceil(np.log10(self.params['nb_steps']))) + 1)
-        template = '{step: ' + nb_step_digits + 'd}/{nb_steps}: episode: {episode}, duration: {duration:.3f}s, episode steps: {episode_steps:3}, steps per second: {sps:3.0f}, episode reward: {episode_reward:6.3f}, mean reward: {reward_mean:6.3f} [{reward_min:6.3f}, {reward_max:6.3f}], mean action: {action_mean:.3f} [{action_min:.3f}, {action_max:.3f}],  {metrics}'
+        template = '{step: ' + nb_step_digits + 'd}/{nb_steps}: episode reached: {episode}, duration: {duration:.3f}s, episode steps: {episode_steps:3}, steps per second: {sps:3.0f}, episode reward: {episode_reward:6.3f}, mean reward: {reward_mean:6.3f} [{reward_min:6.3f}, {reward_max:6.3f}], mean action: {action_mean:.3f} [{action_min:.3f}, {action_max:.3f}],  {metrics}'
         variables = {
             'step': self.step,
             'nb_steps': self.params['nb_steps'],
