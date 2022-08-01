@@ -174,7 +174,6 @@ class Agent:
 
                 env_test = deepcopy(env)
                 _, _, done_test, _ = env_test.step(action)
-                callbacks.on_custom_call({'old action': action, 'new action': new_action, 'action_list': available_actions})
 
                 if(done_test):
                   available_actions = range(env.action_space)
