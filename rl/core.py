@@ -172,7 +172,7 @@ class Agent:
                 ##
                 ##
 
-                env_test = copy.deepcopy(env)
+                env_test = deepcopy(env)
                 _, _, done_test, _ = env_test.step(action)
                 callbacks.on_custom_call({'old action': action, 'new action': new_action, 'action_list': available_actions})
 
@@ -183,7 +183,7 @@ class Agent:
                   while available_actions.len != 0:
 
                     new_action = available_actions.pop()
-                    env_test = copy.deepcopy(env)
+                    env_test = deepcopy(env)
                     _, _, fail, _ = env_test.step(new_action)
 
                     if(fail == False):
