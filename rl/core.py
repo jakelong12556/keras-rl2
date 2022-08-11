@@ -128,7 +128,8 @@ class Agent:
         snapshot_buffer = []
         snapshot_buffer_size = 26
 
-        temp_step = 0 
+        temp_step = 0
+        escape_count = 0 
         try:
             while self.step < nb_steps:
                 if observation is None:  # start of a new episode
@@ -191,8 +192,6 @@ class Agent:
                 _, _, done_test, _ = env_test.step(0)
 
                 if(done_test):
-                    print('game ended, rollback')
-
                     # removing the last buffer state as it will not allow escape from any move
                     del snapshot_buffer[-21:]
                     escaped = False
@@ -236,6 +235,7 @@ class Agent:
                                 safe_distance_from_done = snapshot_buffer_size - len(snapshot_buffer)
                                 
                                 escaped = True
+                                escape_count += 1
 
                                 env_test.ale.restoreState(test_snap)
                                 observation, _, _, _ = env_test.step(new_action)
@@ -310,9 +310,11 @@ class Agent:
                         'episode_reward': episode_reward,
                         'nb_episode_steps': episode_step,
                         'nb_steps': self.step,
+                        'nb_escape': escape_count,
                     }
                     callbacks.on_episode_end(episode, episode_logs)
 
+                    escape_count = 0
                     episode += 1
                     observation = None
                     episode_step = None
