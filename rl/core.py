@@ -313,6 +313,7 @@ class Agent:
                         'nb_escape': escape_count,
                     }
                     callbacks.on_episode_end(episode, episode_logs)
+                    callbacks.on_custom_call({'nb_escape': escape_count})
 
                     escape_count = 0
                     episode += 1
