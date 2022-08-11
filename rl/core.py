@@ -119,6 +119,16 @@ class Agent:
         episode_reward = None
         episode_step = None
         did_abort = False
+
+        env_test = deepcopy(env)
+
+        safe_distance_from_done = None
+        safe_action = None
+
+        snapshot_buffer = []
+        snapshot_buffer_size = 26
+
+        temp_step = 0 
         try:
             while self.step < nb_steps:
                 if observation is None:  # start of a new episode
@@ -128,6 +138,10 @@ class Agent:
 
                     # Obtain the initial observation by resetting the environment.
                     self.reset_states()
+
+                    env_test.reset()
+                    env_test.step(env.action_space.sample())
+
                     observation = deepcopy(env.reset())
                     if self.processor is not None:
                         observation = self.processor.process_observation(observation)
@@ -165,35 +179,85 @@ class Agent:
                 callbacks.on_step_begin(episode_step)
                 # This is were all of the work happens. We first perceive and compute the action
                 # (forward step) and then use the reward to improve (backward step).
-                action = self.forward(observation)
 
-                ##
-                ##
-                ##
-                ##
+                new_snap = env.ale.cloneState()
+                if(len(snapshot_buffer) < snapshot_buffer_size):
+                    snapshot_buffer.append(new_snap)
+                else:
+                    snapshot_buffer.append(new_snap)
+                    snapshot_buffer.pop(0)
 
-                callbacks.on_custom_call({'old action': action})
+                env_test.ale.restoreState(new_snap)    
+                _, _, done_test, _ = env_test.step(0)
 
+                if(done_test):
+                    print('game ended, rollback')
 
-                # env_test = deepcopy(env)
-                # _, _, done_test, _ = env_test.step(action)
+                    # removing the last buffer state as it will not allow escape from any move
+                    del snapshot_buffer[-21:]
+                    escaped = False
 
-                # if(done_test):
-                #   available_actions = range(env.action_space)
-                #   available_actions.remove(action)
+                    while len(snapshot_buffer) != 0 and not escaped:
+                        test_snap = snapshot_buffer.pop()        
 
-                #   while available_actions.len != 0:
+                        if(env_test.ale.game_over()):
+                            env_test.reset()
+                        env_test.ale.restoreState(test_snap)
 
-                #     new_action = available_actions.pop()
-                #     env_test = deepcopy(env)
-                #     _, _, fail, _ = env_test.step(new_action)
-                #     callbacks.on_custom_call({'old action': action, 'new action': new_action, 'action_list': available_actions})
+                        steps_to_last_terminal = snapshot_buffer_size - len(snapshot_buffer)
 
+                        env_test.ale.act(1)
 
-                #     if(fail == False):
-                #       callbacks.on_custom_call({'escaped': 'escaped', 'new action': new_action, 'action_list': available_actions})
-                #       action = new_action
-                #       break
+                        # cardinal directions
+                        action_list = list(range(5))
+                        # remove inaction
+                        action_list.pop(0)
+
+                        while len(action_list) != 0:
+
+                            new_action = random.choice(action_list)
+                            action_list.remove(new_action)
+
+                            if(env_test.ale.game_over()):
+                                env_test.reset()
+                            env_test.ale.restoreState(test_snap)
+                            
+                            i = 0
+
+                            while i < steps_to_last_terminal:
+                                if(env_test.ale.game_over()):
+                                    break
+                                _, _, done_test, _ = env_test.step(new_action)
+                                i+=1
+
+                            if not done_test:
+
+                                safe_action = new_action
+                                safe_distance_from_done = snapshot_buffer_size - len(snapshot_buffer)
+                                
+                                escaped = True
+
+                                env_test.ale.restoreState(test_snap)
+                                observation, _, _, _ = env_test.step(new_action)
+                                if self.processor is not None:
+                                    observation = self.processor.process_observation(observation)
+
+                                env.ale.restoreState(test_snap)
+
+                                break
+
+                if(safe_action is not None):
+                    callbacks.on_custom_call({'new_action': safe_action})
+                    if(temp_step < safe_distance_from_done):
+                        action = self.forward(observation, safe_action)
+                        temp_step+=1
+                    else:
+                        temp_step = 0
+                        safe_action = None
+                        action = self.forward(observation)
+                else:
+                    action = self.forward(observation)
+
 
                 if self.processor is not None:
                     action = self.processor.process_action(action)
@@ -429,7 +493,7 @@ class Agent:
         """
         pass
 
-    def forward(self, observation):
+    def forward(self, observation, force_action = None):
         """Takes the an observation from the environment and returns the action to be taken next.
         If the policy is implemented by a neural network, this corresponds to a forward (inference) pass.
 
@@ -440,6 +504,7 @@ class Agent:
             The next action to be executed in the environment.
         """
         raise NotImplementedError()
+
 
     def backward(self, reward, terminal):
         """Updates the agent after having executed the action returned by `forward`.

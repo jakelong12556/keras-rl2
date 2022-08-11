@@ -218,15 +218,18 @@ class DQNAgent(AbstractDQNAgent):
     def update_target_model_hard(self):
         self.target_model.set_weights(self.model.get_weights())
 
-    def forward(self, observation):
+    def forward(self, observation, force_action = None):
         # Select an action.
         state = self.memory.get_recent_state(observation)
         q_values = self.compute_q_values(state)
-        if self.training:
-            action = self.policy.select_action(q_values=q_values)
-        else:
-            action = self.test_policy.select_action(q_values=q_values)
 
+        if force_action is None:
+            if self.training:
+                action = self.policy.select_action(q_values=q_values)
+            else:
+                action = self.test_policy.select_action(q_values=q_values)
+        else :
+            action = force_action
         # Book-keeping.
         self.recent_observation = observation
         self.recent_action = action
