@@ -243,8 +243,6 @@ class Agent:
                                     observation = self.processor.process_observation(observation)
 
                                 env.ale.restoreState(test_snap)
-                                callbacks.on_custom_call({'new_action': safe_action})
-
                                 break
 
                 if(safe_action is not None):
